@@ -63,18 +63,24 @@ async function humanSize(path: string): Promise<string> {
 async function buildTarget(target: Target, sha: string): Promise<string> {
 	const outfile = join(outDir, outputName(target));
 
-	const flags = [
-		'--compile',
-		`--target=${target}`,
+	// This uses Bun.build rather than shelling out to `bun build`, because `define` is only
+	// available through the API. The CLI has no --define, and quietly ignores one.
+	const result = await Bun.build({
+		entrypoints: [entry],
+		target: 'bun',
 		// Smaller download, and bytecode moves parsing to build time for a faster start.
-		'--minify',
-		'--bytecode',
-		`--define:__BUILD_SHA__=${JSON.stringify(sha)}`,
-		'--outfile',
-		outfile,
-	];
+		minify: true,
+		bytecode: true,
+		define: { __BUILD_SHA__: JSON.stringify(sha) },
+		compile: { target, outfile },
+	});
 
-	await $`bun build ${entry} ${flags}`.cwd(repoRoot).quiet();
+	if (!result.success) {
+		for (const log of result.logs) {
+			process.stderr.write(`${log}\n`);
+		}
+		throw new Error(`Building ${target} failed.`);
+	}
 
 	return outfile;
 }
