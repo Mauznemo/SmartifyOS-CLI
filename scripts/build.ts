@@ -45,11 +45,19 @@ async function buildTarget(target: Target, sha: string): Promise<string> {
 	const result = await Bun.build({
 		entrypoints: [entry],
 		target: 'bun',
-		// Smaller download, and bytecode moves parsing to build time for a faster start.
 		minify: true,
-		bytecode: true,
 		define: { __BUILD_SHA__: JSON.stringify(sha) },
-		compile: { target, outfile },
+		compile: {
+			target,
+			outfile,
+			// Both of these default to on, which means the binary reads a bunfig.toml and a
+			// .env out of whatever directory the user happens to be standing in. For a tool
+			// people run inside their own car project that is wrong twice over: an unrelated
+			// bunfig.toml stops the CLI from starting at all, and a .env silently changes how
+			// it behaves. Neither file has anything to do with us once the binary is built.
+			autoloadBunfig: false,
+			autoloadDotenv: false,
+		},
 	});
 
 	if (!result.success) {

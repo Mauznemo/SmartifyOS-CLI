@@ -209,6 +209,9 @@ jobs:
         env:
           SMARTIFY_OS_VERSION: ${{ needs.check-version.outputs.tag }}
         run: |
-          apk add --no-cache curl tar
+          # libstdc++ is a real prerequisite on musl, Bun's binaries link against it and
+          # Alpine does not ship it. install.sh says so by name if it is missing.
+          apk add --no-cache curl tar libstdc++
           sh ./install.sh
           "$HOME/.smartify-os/bin/smartify-os" --version
+          "$HOME/.smartify-os/bin/smartify-os" --help

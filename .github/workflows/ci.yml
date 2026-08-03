@@ -57,6 +57,66 @@ jobs:
       - name: Cross compile all targets
         run: bun run build:all
 
+      - uses: actions/upload-artifact@v7
+        with:
+          name: binaries
+          path: dist/
+          retention-days: 1
+
+  # Building a binary is not the same as it working. A cross compiled binary can build
+  # cleanly and then segfault on the machine it was built for, which is exactly what got
+  # through to a published release once. These run the real artifacts on the real systems.
+  run-binaries:
+    name: Run it on ${{ matrix.os }}
+    needs: cross-compile
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            binary: smartify-os-linux-x64
+          - os: windows-latest
+            binary: smartify-os-windows-x64.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: binaries
+
+      - name: Run it
+        shell: bash
+        run: |
+          set -eu
+          chmod +x "${{ matrix.binary }}"
+          "./${{ matrix.binary }}" --version
+          "./${{ matrix.binary }}" --help
+          # A bunfig.toml or .env next to the user has nothing to do with us, and used to
+          # stop the binary from starting at all.
+          printf 'not valid toml [[[\n' > bunfig.toml
+          printf 'SOMETHING=1\n' > .env
+          "./${{ matrix.binary }}" --version
+          # A reader that goes away early must not turn into an EPIPE stack trace.
+          "./${{ matrix.binary }}" --help | head -2
+
+  run-binary-musl:
+    name: Run it on Alpine
+    needs: cross-compile
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: binaries
+
+      - name: Run it
+        run: |
+          set -eu
+          # Bun's musl binaries link against libstdc++, which Alpine does not ship.
+          apk add --no-cache libstdc++
+          chmod +x smartify-os-linux-x64-musl
+          ./smartify-os-linux-x64-musl --version
+          ./smartify-os-linux-x64-musl --help
+
   installers:
     name: Check the install scripts
     runs-on: ubuntu-latest

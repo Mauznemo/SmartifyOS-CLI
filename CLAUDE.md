@@ -54,7 +54,15 @@ bun run install:local     # same, but the real compiled binary
 
 `install:dev` and `install:local` both install to `~/.smartify-os/bin` and add the same PATH line the real installer does, so they replace each other and a later `curl | bash` replaces them. Use `install:dev` while working, since it needs no rebuild, and `install:local` to check the thing a user actually gets.
 
-`bun build --compile --bytecode` has no top level await, which is why `src/index.ts` calls `main().then(...)` instead of awaiting.
+Compiling to a standalone binary produces a format with no top level await, which is why `src/index.ts` calls `main().then(...)` instead of awaiting.
+
+Three things about the compiled binary that were learned the hard way, all handled in `scripts/build.ts` and `src/index.ts`, do not undo them:
+
+- `autoloadBunfig` and `autoloadDotenv` are turned **off**. They default to on, which makes the binary read a `bunfig.toml` and a `.env` out of whatever directory the user is standing in. An unrelated `bunfig.toml` stopped the CLI from starting at all.
+- **No `bytecode`.** It saved 0.5 ms out of 43 ms on a bundle this small and is implicated in open Bun bugs around standalone binaries.
+- A closed pipe (`smartify-os --help | head`) is not an error. See `ignoreClosedPipes` in `src/index.ts`.
+
+Bun's musl binaries link against `libstdc++`, which Alpine does not ship. `install.sh` names it if it is missing.
 
 Releases are cut by pushing a `v*` tag that matches the version in package.json. The release workflow runs lint, typecheck and tests first and stops if any of them fail, then builds every target, signs the macOS ones on a Mac, publishes them, and installs the result on Linux, macOS, Windows and Alpine to prove the install scripts still work.
 

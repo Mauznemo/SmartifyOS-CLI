@@ -60,4 +60,19 @@ describe('smartify-os', () => {
 		expect(code).toBe(0);
 		expect(stdout).toContain('SmartifyOS');
 	});
+
+	// `smartify-os --help | head` closes the pipe early. That has to be silent, not an
+	// EPIPE stack trace. It showed up first on Linux, where the pipe timing differs.
+	test('a reader that closes the pipe early is not an error', async () => {
+		const proc = Bun.spawn(['sh', '-c', `"${process.execPath}" run "${entry}" --help | head -2`], {
+			stdout: 'pipe',
+			stderr: 'pipe',
+			env: { ...process.env, NO_COLOR: '1' },
+		});
+
+		const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+
+		expect(code).toBe(0);
+		expect(stderr).not.toContain('EPIPE');
+	});
 });

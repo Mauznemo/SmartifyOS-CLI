@@ -56,6 +56,14 @@ Then take the `export PATH` line back out of your shell config. It is the one ma
 | Linux   | x64, ARM64, and musl versions of both for Alpine |
 | Windows | x64, ARM64                                       |
 
+On Alpine and other musl systems you also need `libstdc++`, which Alpine does not ship by default:
+
+```bash
+apk add libstdc++
+```
+
+The installer tells you this by name if it is missing. Every other system already has what it needs.
+
 ## Working on the CLI
 
 You need [Bun](https://bun.sh). Everything else comes from `bun install`.

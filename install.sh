@@ -205,8 +205,18 @@ main() {
 	mv -f "$tmp/$BIN_NAME" "$INSTALL_DIR/$BIN_NAME"
 	ok "put it in $INSTALL_DIR"
 
-	installed=$("$INSTALL_DIR/$BIN_NAME" --version 2>/dev/null) ||
+	# Keep stderr, do not throw it away. When this fails it is usually a missing system
+	# library, and the loader message naming it is the only useful thing on screen.
+	if ! installed=$("$INSTALL_DIR/$BIN_NAME" --version 2>"$tmp/run.log"); then
+		if grep -q "libstdc++\|libgcc_s" "$tmp/run.log" 2>/dev/null; then
+			# Alpine and other musl systems do not ship libstdc++, and SmartifyOS needs it.
+			fail "SmartifyOS needs libstdc++, which is not installed." \
+				"On Alpine run: apk add libstdc++"
+		fi
+		printf '\n' >&2
+		sed 's/^/    /' "$tmp/run.log" >&2
 		fail "The installed binary does not run on this machine." "Please open an issue at https://github.com/$REPO/issues"
+	fi
 	ok "SmartifyOS CLI $installed"
 
 	PATH_STATUS="ready"
