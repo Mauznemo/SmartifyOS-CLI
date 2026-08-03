@@ -19,7 +19,7 @@ jobs:
     name: Lint, typecheck and test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -43,7 +43,7 @@ jobs:
     name: Build every target
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -59,7 +59,7 @@ jobs:
     name: Check the install scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Shellcheck install.sh
         run: shellcheck --shell=sh install.sh
