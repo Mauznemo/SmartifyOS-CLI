@@ -40,9 +40,9 @@ scripts/build.ts    cross compiles every target
 
 ```bash
 bun install
+bun run check             # lint, typecheck, test, build. Run this before every push
+bun run check:all         # the same plus all eight targets, worth it before a release
 bun run dev -- --help     # run from source
-bun test                  # unit tests, the dash rule, and a real subprocess smoke test
-bun run typecheck
 bun run format            # Biome, fixes what it can
 bun run build             # one binary for this machine, then runs it
 bun run build:all         # all eight published targets
@@ -50,11 +50,13 @@ bun run install:dev       # put smartify-os on your PATH, running live from src
 bun run install:local     # same, but the real compiled binary
 ```
 
+**`bun run check` is the safety net, not GitHub.** CI only runs on pull requests, so nothing checks a push to main. The check takes about two seconds and reports every failure at once instead of stopping at the first, so there is no reason to skip it.
+
 `install:dev` and `install:local` both install to `~/.smartify-os/bin` and add the same PATH line the real installer does, so they replace each other and a later `curl | bash` replaces them. Use `install:dev` while working, since it needs no rebuild, and `install:local` to check the thing a user actually gets.
 
 `bun build --compile --bytecode` has no top level await, which is why `src/index.ts` calls `main().then(...)` instead of awaiting.
 
-Releases are cut by pushing a `v*` tag that matches the version in package.json. CI builds every target, signs the macOS ones on a Mac, publishes them, then installs the result on Linux, macOS, Windows and Alpine to prove the install scripts still work.
+Releases are cut by pushing a `v*` tag that matches the version in package.json. The release workflow runs lint, typecheck and tests first and stops if any of them fail, then builds every target, signs the macOS ones on a Mac, publishes them, and installs the result on Linux, macOS, Windows and Alpine to prove the install scripts still work.
 
 ## Keeping this file useful
 

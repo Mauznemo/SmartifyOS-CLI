@@ -1,8 +1,10 @@
 name: CI
 
+# Deliberately not on push. Your own commits are covered by `bun run check`, which does
+# the same work in under two seconds, and the release workflow runs all of this again
+# before it publishes anything. What is left is the case that matters for an open source
+# repo: code arriving from someone else, which nobody has run anything against yet.
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 

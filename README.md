@@ -68,6 +68,7 @@ bun install
 
 | Command                 | What it does                                 |
 | ----------------------- | -------------------------------------------- |
+| `bun run check`         | Lint, typecheck, test and build, all in one. Run this before pushing |
 | `bun run dev -- --help` | Run it from source                           |
 | `bun test`              | Run the tests                                |
 | `bun run typecheck`     | Typecheck with tsc                           |
