@@ -74,3 +74,7 @@ bun install
 | `bun run format`        | Format and fix with Biome                    |
 | `bun run build`         | Build a binary for this machine, then run it |
 | `bun run build:all`     | Build all eight published targets            |
+| `bun run install:dev`   | Put `smartify-os` on your PATH, running live from source with no rebuild |
+| `bun run install:local` | Same, but installs the real compiled binary  |
+
+`install:dev` is the one to use while working on it. It installs to `~/.smartify-os/bin` just like the real installer, so you can run `smartify-os` from inside an actual car project, and your edits take effect straight away.

@@ -46,7 +46,11 @@ bun run typecheck
 bun run format            # Biome, fixes what it can
 bun run build             # one binary for this machine, then runs it
 bun run build:all         # all eight published targets
+bun run install:dev       # put smartify-os on your PATH, running live from src
+bun run install:local     # same, but the real compiled binary
 ```
+
+`install:dev` and `install:local` both install to `~/.smartify-os/bin` and add the same PATH line the real installer does, so they replace each other and a later `curl | bash` replaces them. Use `install:dev` while working, since it needs no rebuild, and `install:local` to check the thing a user actually gets.
 
 `bun build --compile --bytecode` has no top level await, which is why `src/index.ts` calls `main().then(...)` instead of awaiting.
 

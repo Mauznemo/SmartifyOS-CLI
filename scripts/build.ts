@@ -3,6 +3,15 @@ import { mkdir, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { $ } from 'bun';
 import color from 'picocolors';
+import {
+	entry,
+	hostTarget,
+	outDir,
+	outputName,
+	repoRoot,
+	type Target,
+	targets,
+} from './targets.ts';
 
 /**
  * Compiles the CLI into a standalone binary, one that runs on a machine with no Bun and no
@@ -13,38 +22,6 @@ import color from 'picocolors';
  *   bun run build:all        every platform we publish for
  *   bun run build --target bun-linux-arm64
  */
-
-/** Every platform a release is published for. */
-const targets = [
-	'bun-darwin-arm64',
-	'bun-darwin-x64',
-	'bun-linux-x64',
-	'bun-linux-arm64',
-	'bun-linux-x64-musl',
-	'bun-linux-arm64-musl',
-	'bun-windows-x64',
-	'bun-windows-arm64',
-] as const;
-
-type Target = (typeof targets)[number];
-
-const repoRoot = join(import.meta.dir, '..');
-const entry = join(repoRoot, 'src', 'index.ts');
-const outDir = join(repoRoot, 'dist');
-
-/** The target matching the machine this script is running on. */
-function hostTarget(): Target {
-	const os =
-		process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : 'linux';
-	const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
-	return `bun-${os}-${arch}` as Target;
-}
-
-/** The file name a target produces, for example `smartify-os-linux-arm64`. */
-function outputName(target: Target): string {
-	const suffix = target.replace('bun-', '');
-	return target.startsWith('bun-windows') ? `smartify-os-${suffix}.exe` : `smartify-os-${suffix}`;
-}
 
 /** Short commit the binary is built from, so `--version` can point at exact source. */
 async function buildSha(): Promise<string> {

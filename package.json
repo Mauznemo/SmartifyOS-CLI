@@ -15,7 +15,9 @@
 		"format": "biome check --write .",
 		"test": "bun test",
 		"build": "bun run scripts/build.ts",
-		"build:all": "bun run scripts/build.ts --all"
+		"build:all": "bun run scripts/build.ts --all",
+		"install:dev": "bun run scripts/install-local.ts --dev",
+		"install:local": "bun run scripts/install-local.ts"
 	},
 	"dependencies": {
 		"@clack/prompts": "^1.7.0",
