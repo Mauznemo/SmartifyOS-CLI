@@ -1,0 +1,6 @@
+[install]
+# Fail early if the lockfile is out of date in CI
+exact = false
+
+[test]
+root = "."

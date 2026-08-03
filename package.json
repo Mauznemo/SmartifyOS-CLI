@@ -1,0 +1,32 @@
+{
+	"name": "smartify-os-cli",
+	"version": "0.1.0",
+	"description": "The SmartifyOS command line tool, sets up, builds and deploys your car infotainment system",
+	"private": true,
+	"type": "module",
+	"homepage": "https://smartify-os.com/",
+	"bin": {
+		"smartify-os": "./src/index.ts"
+	},
+	"scripts": {
+		"dev": "bun run src/index.ts",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check .",
+		"format": "biome check --write .",
+		"test": "bun test",
+		"build": "bun run scripts/build.ts",
+		"build:all": "bun run scripts/build.ts --all"
+	},
+	"dependencies": {
+		"@clack/prompts": "^1.7.0",
+		"picocolors": "^1.1.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.6",
+		"@types/bun": "^1.3.14",
+		"typescript": "^5.9.3"
+	},
+	"engines": {
+		"bun": ">=1.3.0"
+	}
+}
