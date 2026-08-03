@@ -31,17 +31,10 @@ scripts/build.ts    cross compiles every target
 - **Never print with `console.log`**, use `writeLine` or the `log` helpers from `src/ui/output.ts`. Biome fails the build on `console`.
 - **Failures throw `CliError`** from `src/utils/errors.ts` with a message saying what went wrong and a `hint` saying what to do about it. Commands return nothing on success, the exit code comes from the error.
 
-## Docs and comments
-
-Anything the end user can reach gets a `///` style doc comment saying what it is for before what it does, in plain words. Code the user never touches still gets a doc, ending with `Internal:` so it is obvious at a glance which side of the API something is on. Do not comment things that are obvious to anyone who has written TypeScript before.
-
 ## Writing style
 
-Never use em dashes (—) or en dashes (–), anywhere: not in UI strings, docs, normal comments, or markdown. Use a comma, parentheses, or a separate sentence instead.
-
-This is checked by `tests/dashes.test.ts`, which scans the whole repo and fails on either character.
-
-Spell the project name out in full, `SmartifyOS` or `smartify-os`, never `Smartify` on its own.
+- Never use em dashes (—) or en dashes (–), anywhere: not in UI strings, docs, normal comments, or markdown. Use a comma, parentheses, or a separate sentence instead. This is checked by `tests/dashes.test.ts`, which scans the whole repo and fails on either character.
+- Spell the project name out in full, `SmartifyOS` or `smartify-os`, never `Smartify` on its own.
 
 ## Working on it
 
