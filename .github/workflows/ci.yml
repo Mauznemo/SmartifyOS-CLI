@@ -85,6 +85,10 @@ jobs:
 
       - name: Run it
         shell: bash
+        # The update check already stands down in CI. Setting this as well means no job
+        # here can ever wait on github.com, whatever the check does later.
+        env:
+          SMARTIFY_OS_NO_UPDATE_CHECK: '1'
         run: |
           set -eu
           chmod +x "${{ matrix.binary }}"
@@ -109,6 +113,8 @@ jobs:
           name: binaries
 
       - name: Run it
+        env:
+          SMARTIFY_OS_NO_UPDATE_CHECK: '1'
         run: |
           set -eu
           # Bun's musl binaries link against libstdc++, which Alpine does not ship.

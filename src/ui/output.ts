@@ -17,6 +17,16 @@ export function writeErrorLine(line = ''): void {
 	process.stderr.write(`${line}\n`);
 }
 
+/**
+ * Whether an extra line on stderr would reach a person.
+ *
+ * False in CI and when stderr is a file or a pipe, where an unasked for notice is noise in
+ * somebody's log rather than something anybody will read.
+ */
+export function canShowNotice(): boolean {
+	return clack.isTTY(process.stderr) && !clack.isCI();
+}
+
 /** Opens a prompt session with the SmartifyOS header. */
 export function intro(title?: string): void {
 	clack.intro(title ? `${brandName()} ${theme.dim(theme.dim('·'))} ${title}` : brandName());

@@ -1,7 +1,9 @@
 #!/usr/bin/env bun
 import * as clack from '@clack/prompts';
-import { run } from './cli.ts';
+import { parse, run } from './cli.ts';
+import { sweepReplacedBinary } from './core/update/install.ts';
 import { renderError } from './ui/output.ts';
+import { maybeNotifyAboutUpdate } from './ui/update-notice.ts';
 import { CancelledError, CliError, ExitCode } from './utils/errors.ts';
 
 /**
@@ -24,9 +26,9 @@ function ignoreClosedPipes(): void {
 	}
 }
 
-async function main(): Promise<number> {
+async function main(argv: string[]): Promise<number> {
 	try {
-		return await run(process.argv.slice(2));
+		return await run(argv);
 	} catch (error) {
 		if (error instanceof CancelledError) {
 			clack.cancel('Cancelled, nothing was changed.');
@@ -38,10 +40,49 @@ async function main(): Promise<number> {
 	}
 }
 
+/**
+ * Internal: the tidying up that happens once the user's command is out of the way.
+ *
+ * It runs here rather than at startup so that the update check can never be the reason a
+ * command feels slow, and it is skipped after a failure, because an error on screen has
+ * already used up the user's attention. Nothing in here is allowed to throw.
+ */
+async function afterCommand(argv: string[], code: number): Promise<void> {
+	try {
+		await sweepReplacedBinary();
+		if (code !== ExitCode.ok) return;
+		if (wasUpdateCommand(argv)) return;
+		await maybeNotifyAboutUpdate();
+	} catch {
+		// A check nobody asked for is never worth a message nobody asked for.
+	}
+}
+
+/**
+ * Internal: telling somebody to run `update` at the end of `update` would be daft.
+ *
+ * `parse` has no side effects, so asking it a second time costs nothing and is a good deal
+ * safer than trying to read the command name out of argv by hand.
+ */
+function wasUpdateCommand(argv: string[]): boolean {
+	try {
+		const result = parse(argv);
+		return result.kind === 'command' && result.command.name === 'update';
+	} catch {
+		return false;
+	}
+}
+
 ignoreClosedPipes();
+
+const argv = process.argv.slice(2);
 
 // Called rather than awaited at the top level, because compiling to a standalone binary
 // produces a format that has no top level await.
-main().then((code) => {
+//
+// The exit code is set before the tidying up, so that it is already correct whatever
+// happens next. The process leaves with it once the event loop empties.
+main(argv).then(async (code) => {
 	process.exitCode = code;
+	await afterCommand(argv, code);
 });

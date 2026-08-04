@@ -1,14 +1,17 @@
-import type { Command } from './types.ts';
+import { helpCommand } from './help.ts';
+import { register } from './registry.ts';
+import { updateCommand } from './update.ts';
 
 /**
- * Every command the CLI knows about, in the order they appear in `--help`.
+ * Where every command is switched on.
  *
- * To add one, write it in its own file in this folder and put it in this list. The order
- * here is the order the user reads, so keep the common ones first.
+ * To add one, write it in its own file in this folder and put it in the `register` call
+ * below. The order here is the order the user reads, so keep the common ones first, and
+ * mark anything that is about the tool rather than about the car as `utility: true`.
+ *
+ * Command files import ./registry.ts, never this file. This is the only place that knows
+ * about all of them at once, which is what keeps the imports going one way.
  */
-export const commands: Command[] = [];
+register(updateCommand, helpCommand);
 
-/** Finds a command by its name or one of its aliases. */
-export function findCommand(name: string): Command | undefined {
-	return commands.find((c) => c.name === name || c.aliases?.includes(name));
-}
+export { commands, findCommand, visibleCommands } from './registry.ts';

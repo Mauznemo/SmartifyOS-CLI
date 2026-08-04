@@ -17,13 +17,20 @@ Runtime dependencies are deliberately kept to two. Think before adding a third.
 
 ```
 src/index.ts        entry point, the only place that ends the process
-src/cli.ts          parse() and run(), plus help rendering
-src/commands/       one file per command, listed in commands/index.ts
-src/ui/             anything that talks to the terminal
+src/cli.ts          parse() and run()
+src/commands/       one file per command, switched on in commands/index.ts
+src/ui/             anything that talks to the terminal, including help rendering
 src/core/           process runners, config, paths, the real work
 src/utils/          small helpers with no opinion about the terminal
 scripts/build.ts    cross compiles every target
 ```
+
+Two rules keep the command imports going one way, and both exist because a `help` command
+needs the help renderer while the help renderer needs the list of commands:
+
+- **Commands are registered in `src/commands/index.ts`**, into the array that lives in
+  `src/commands/registry.ts`. A command file imports `registry.ts`, never `index.ts`.
+- **`src/ui/help.ts` takes the command list as an argument** and never imports the registry.
 
 - **`src/core/` must never import `@clack/prompts`.** Logic stays testable without a TTY and reusable from a non interactive run. Only `src/ui/` and `src/commands/` touch the terminal.
 - **Every command has to work non interactively.** Flags supply the answers, prompts only fill in what is missing. Prompting when nobody can answer throws instead of hanging, see `assertInteractive` in `src/ui/prompt.ts`.
@@ -63,6 +70,8 @@ Three things about the compiled binary that were learned the hard way, all handl
 - A closed pipe (`smartify-os --help | head`) is not an error. See `ignoreClosedPipes` in `src/index.ts`.
 
 Bun's musl binaries link against `libstdc++`, which Alpine does not ship. `install.sh` names it if it is missing.
+
+`__BUILD_TARGET__` is injected the same way `__BUILD_SHA__` is, so `update` knows which of the eight builds to download without having to guess. Guessing gets glibc and musl the wrong way round, and that binary does not start at all. Anything else added to `define` needs a declaration in `globals.d.ts` and a `typeof x === 'string'` fallback for running from source.
 
 Releases are cut by pushing a `v*` tag that matches the version in package.json. The release workflow runs lint, typecheck and tests first and stops if any of them fail, then builds every target, signs the macOS ones on a Mac, publishes them, and installs the result on Linux, macOS, Windows and Alpine to prove the install scripts still work.
 

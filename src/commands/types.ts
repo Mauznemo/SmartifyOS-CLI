@@ -53,6 +53,11 @@ export interface Command {
 	/** Hide from the command list. For internal or experimental commands. */
 	hidden?: boolean;
 	/**
+	 * Part of running the tool rather than one of the things the tool is for. `help` and
+	 * `update` are utilities, `build` is not. It only decides where a command is listed.
+	 */
+	utility?: boolean;
+	/**
 	 * Does the work. Returning means it worked. To fail, throw a `CliError` with a message
 	 * the user can act on, and it decides the exit code.
 	 */

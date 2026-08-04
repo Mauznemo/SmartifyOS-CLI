@@ -179,6 +179,7 @@ jobs:
         if: runner.os != 'Windows'
         env:
           SMARTIFY_OS_VERSION: ${{ needs.check-version.outputs.tag }}
+          SMARTIFY_OS_NO_UPDATE_CHECK: '1'
         run: |
           sh ./install.sh
           "$HOME/.smartify-os/bin/smartify-os" --version
@@ -189,6 +190,7 @@ jobs:
         shell: pwsh
         env:
           SMARTIFY_OS_VERSION: ${{ needs.check-version.outputs.tag }}
+          SMARTIFY_OS_NO_UPDATE_CHECK: '1'
         run: |
           ./install.ps1
           if ($LASTEXITCODE -ne 0) { throw 'The installer failed.' }
@@ -208,6 +210,7 @@ jobs:
       - name: Install and run it
         env:
           SMARTIFY_OS_VERSION: ${{ needs.check-version.outputs.tag }}
+          SMARTIFY_OS_NO_UPDATE_CHECK: '1'
         run: |
           # libstdc++ is a real prerequisite on musl, Bun's binaries link against it and
           # Alpine does not ship it. install.sh says so by name if it is missing.

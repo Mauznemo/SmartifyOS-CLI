@@ -1,7 +1,8 @@
-import { commands } from '../commands/index.ts';
+import { visibleCommands } from '../commands/index.ts';
 import { ExitCode } from '../utils/errors.ts';
+import { renderRootHelp } from './help.ts';
 import { intro, log, outro } from './output.ts';
-import { select } from './prompt.ts';
+import { isInteractive, select } from './prompt.ts';
 import { theme } from './theme.ts';
 
 /**
@@ -12,13 +13,26 @@ import { theme } from './theme.ts';
  * can also be run directly, nothing should be reachable only through the menu.
  */
 export async function runMenu(): Promise<number> {
+	const visible = visibleCommands();
+
+	// A menu needs somebody to pick from it. Piped into a file or run from a script, the
+	// friendliest thing this can be is the same list `--help` prints.
+	if (!isInteractive()) {
+		renderRootHelp(visible);
+		return ExitCode.ok;
+	}
+
 	intro('Welcome');
 
-	const visible = commands.filter((c) => !c.hidden);
+	// `help` and `update` are about the tool, not about the car, so they do not count
+	// towards it having anything to offer yet. This note takes itself down the day the
+	// first real command lands.
+	if (visible.every((c) => c.utility)) {
+		log.info('There are no setup or build commands yet, this is the skeleton of the CLI.');
+		log.message(theme.dim('The setup, build and deploy commands land here next.'));
+	}
 
 	if (visible.length === 0) {
-		log.info('There are no commands yet, this is the skeleton of the CLI.');
-		log.message(theme.dim('The setup, build and deploy commands land here next.'));
 		outro(`See you soon ${theme.dim('(nothing was changed)')}`);
 		return ExitCode.ok;
 	}

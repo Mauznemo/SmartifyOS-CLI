@@ -1,0 +1,111 @@
+/**
+ * Just enough of semver to answer one question: is the release GitHub is offering newer
+ * than the one that is installed?
+ *
+ * This is deliberately not a semver library. It compares two version strings that this
+ * project itself published, so it can afford to be small and to treat anything it does not
+ * understand as "no answer" rather than as an error.
+ */
+
+/** One version, taken apart. */
+export interface ParsedVersion {
+	major: number;
+	minor: number;
+	patch: number;
+	/** Dot separated prerelease identifiers, empty for a normal release. */
+	prerelease: string[];
+}
+
+const pattern = /^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?$/;
+
+/**
+ * Reads `0.2.0`, `v0.2.0`, `0.2.0-beta.1` or `0.2.0+build.5`.
+ *
+ * Returns undefined for anything else, which is the whole point: a garbled answer from the
+ * network must never turn into a version number.
+ */
+export function parseVersion(input: string): ParsedVersion | undefined {
+	// Build metadata is explicitly not part of precedence in semver, so drop it first.
+	const [withoutBuild = ''] = input.trim().split('+');
+	const match = pattern.exec(withoutBuild);
+	if (!match) return undefined;
+
+	const prerelease = match[4] ? match[4].split('.') : [];
+	// A trailing or doubled dot leaves an empty identifier behind, which is not a version.
+	if (prerelease.some((part) => part === '')) return undefined;
+
+	return {
+		major: Number(match[1]),
+		minor: Number(match[2] ?? 0),
+		patch: Number(match[3] ?? 0),
+		prerelease,
+	};
+}
+
+/**
+ * Compares two prerelease identifier lists the way semver says to.
+ *
+ * The rules that matter here: a version with no prerelease beats the same version with one,
+ * all digit identifiers compare as numbers so `alpha.9` sorts below `alpha.10`, all digit
+ * sorts below alphanumeric, and when everything matches the longer list wins.
+ */
+function comparePrerelease(a: string[], b: string[]): number {
+	if (a.length === 0 && b.length === 0) return 0;
+	if (a.length === 0) return 1;
+	if (b.length === 0) return -1;
+
+	for (let i = 0; i < Math.max(a.length, b.length); i++) {
+		const left = a[i];
+		const right = b[i];
+		if (left === undefined) return -1;
+		if (right === undefined) return 1;
+		if (left === right) continue;
+
+		const leftIsNumber = /^\d+$/.test(left);
+		const rightIsNumber = /^\d+$/.test(right);
+		if (leftIsNumber && rightIsNumber) return Number(left) < Number(right) ? -1 : 1;
+		if (leftIsNumber) return -1;
+		if (rightIsNumber) return 1;
+		return left < right ? -1 : 1;
+	}
+
+	return 0;
+}
+
+/**
+ * Orders two versions: -1 when `a` is older, 0 when they are the same, 1 when `a` is newer.
+ *
+ * Anything that does not parse sorts below anything that does, rather than throwing. Nobody
+ * should get a stack trace because a proxy returned an HTML page.
+ */
+export function compareVersions(a: string, b: string): number {
+	const left = parseVersion(a);
+	const right = parseVersion(b);
+
+	if (!left && !right) return 0;
+	if (!left) return -1;
+	if (!right) return 1;
+
+	if (left.major !== right.major) return left.major < right.major ? -1 : 1;
+	if (left.minor !== right.minor) return left.minor < right.minor ? -1 : 1;
+	if (left.patch !== right.patch) return left.patch < right.patch ? -1 : 1;
+
+	return comparePrerelease(left.prerelease, right.prerelease);
+}
+
+/**
+ * Whether `candidate` is worth telling someone on `current` about.
+ *
+ * Stricter than a plain comparison on purpose. Someone running a normal release is never
+ * told about a beta, because they did not opt into one and would have no way to judge it.
+ * Someone already on `0.2.0-beta.1` does hear about `0.2.0-beta.2` and about `0.2.0`.
+ */
+export function isNewer(candidate: string, current: string): boolean {
+	const next = parseVersion(candidate);
+	const now = parseVersion(current);
+	if (!next || !now) return false;
+
+	if (next.prerelease.length > 0 && now.prerelease.length === 0) return false;
+
+	return compareVersions(candidate, current) > 0;
+}

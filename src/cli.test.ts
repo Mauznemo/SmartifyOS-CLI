@@ -116,3 +116,43 @@ describe('parse', () => {
 		});
 	});
 });
+
+describe('the commands that ship', () => {
+	test('help is a command, not only a flag', () => {
+		const result = parse(['help']);
+		expect(result.kind).toBe('command');
+		if (result.kind !== 'command') return;
+		expect(result.command.name).toBe('help');
+		expect(result.positionals).toEqual([]);
+	});
+
+	test('the command to explain is a positional, so `help update` works', () => {
+		const result = parse(['help', 'update']);
+		expect(result.kind).toBe('command');
+		if (result.kind !== 'command') return;
+		expect(result.command.name).toBe('help');
+		expect(result.positionals).toEqual(['update']);
+	});
+
+	test('upgrade is the same command as update', () => {
+		const result = parse(['upgrade']);
+		expect(result.kind).toBe('command');
+		if (result.kind !== 'command') return;
+		expect(result.command.name).toBe('update');
+	});
+
+	test('update takes --check and --to', () => {
+		const result = parse(['update', '--check', '--to', '0.2.0']);
+		expect(result.kind).toBe('command');
+		if (result.kind !== 'command') return;
+		expect(result.flags.check).toBe(true);
+		expect(result.flags.to).toBe('0.2.0');
+	});
+
+	test('--help after update explains it rather than running it', () => {
+		const result = parse(['update', '--help']);
+		expect(result.kind).toBe('help');
+		if (result.kind !== 'help') return;
+		expect(result.command?.name).toBe('update');
+	});
+});

@@ -1,27 +1,17 @@
 import { parseArgs } from 'node:util';
-import { commands, findCommand } from './commands/index.ts';
+import { binaryName, globalFlags, topLevelFlags } from './commands/flags.ts';
+import { commands, findCommand, visibleCommands } from './commands/index.ts';
 import type { Command, FlagSpec, Flags } from './commands/types.ts';
+import { renderCommandHelp, renderRootHelp } from './ui/help.ts';
 import { runMenu } from './ui/menu.ts';
 import { writeLine } from './ui/output.ts';
-import { symbols, theme } from './ui/theme.ts';
+import { theme } from './ui/theme.ts';
 import { CliError, ExitCode } from './utils/errors.ts';
 import { closest } from './utils/suggest.ts';
 import { versionString } from './utils/version.ts';
 
-/** The name the user types. Kept in one place so help text can never drift from reality. */
-export const binaryName = 'smartify-os';
-
-/** Flags that work on every command. */
-export const globalFlags: Record<string, FlagSpec> = {
-	help: { type: 'boolean', short: 'h', describe: 'Show what this command can do' },
-	yes: { type: 'boolean', short: 'y', describe: 'Say yes to every question, never ask' },
-};
-
-/** Flags that only make sense before a command name. */
-const topLevelFlags: Record<string, FlagSpec> = {
-	...globalFlags,
-	version: { type: 'boolean', short: 'v', describe: 'Show which version is installed' },
-};
+// Re-exported because this is where they were before, and where anyone would look first.
+export { binaryName, globalFlags };
 
 /** What the command line asked for. */
 export type ParseResult =
@@ -35,7 +25,8 @@ export type ParseResult =
  * Works out what the user asked for, without doing any of it.
  *
  * Kept free of side effects on purpose. Nothing in here prints, exits or touches the
- * filesystem, which is what makes the whole command line surface testable.
+ * filesystem, which is what makes the whole command line surface testable, and what lets
+ * src/index.ts ask it a second time after the command has run.
  *
  * @throws {CliError} when a flag is not recognised or is missing its value.
  */
@@ -132,69 +123,6 @@ export async function run(argv: string[]): Promise<number> {
 
 /** Prints the help for one command, or for the whole CLI when no command is given. */
 export function renderHelp(command?: Command): void {
-	writeLine();
-
-	if (command) {
-		writeLine(`  ${theme.strong(`${binaryName} ${command.name}`)}`);
-		writeLine(`  ${theme.dim(command.description ?? command.summary)}`);
-		writeLine();
-		writeLine(`  ${theme.strong('Usage')}`);
-		writeLine(`    ${binaryName} ${command.name} ${theme.dim('[options]')}`);
-		renderFlags({ ...globalFlags, ...command.flags });
-
-		if (command.examples?.length) {
-			writeLine();
-			writeLine(`  ${theme.strong('Examples')}`);
-			for (const example of command.examples) {
-				writeLine(`    ${theme.dim(example)}`);
-			}
-		}
-
-		writeLine();
-		return;
-	}
-
-	writeLine(`  ${theme.brand(theme.strong('SmartifyOS'))} ${theme.dim(versionString())}`);
-	writeLine(`  ${theme.dim('Set up, build and run your own car infotainment system.')}`);
-	writeLine();
-	writeLine(`  ${theme.strong('Usage')}`);
-	writeLine(`    ${binaryName} ${theme.dim('<command> [options]')}`);
-	writeLine();
-	writeLine(`  ${theme.strong('Commands')}`);
-
-	const visible = commands.filter((c) => !c.hidden);
-	if (visible.length === 0) {
-		writeLine(`    ${theme.dim('None yet, they are on their way.')}`);
-	} else {
-		const width = Math.max(...visible.map((c) => c.name.length));
-		for (const c of visible) {
-			writeLine(`    ${c.name.padEnd(width)}  ${theme.dim(c.summary)}`);
-		}
-	}
-
-	renderFlags(topLevelFlags);
-
-	writeLine();
-	writeLine(
-		`  ${theme.dim(`${symbols.arrow} Run ${theme.code(binaryName)} on its own for the guided menu.`)}`,
-	);
-	writeLine();
-}
-
-/** Internal: prints an aligned Options block. */
-function renderFlags(spec: Record<string, FlagSpec>): void {
-	const entries = Object.entries(spec);
-	if (entries.length === 0) return;
-
-	const labels = entries.map(([name, flag]) => {
-		const short = flag.short ? `-${flag.short}, ` : '    ';
-		return `${short}--${name}`;
-	});
-	const width = Math.max(...labels.map((label) => label.length));
-
-	writeLine();
-	writeLine(`  ${theme.strong('Options')}`);
-	entries.forEach(([, flag], index) => {
-		writeLine(`    ${(labels[index] ?? '').padEnd(width)}  ${theme.dim(flag.describe)}`);
-	});
+	if (command) renderCommandHelp(command);
+	else renderRootHelp(visibleCommands());
 }

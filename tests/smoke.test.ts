@@ -1,4 +1,6 @@
-import { describe, expect, test } from 'bun:test';
+import { afterAll, describe, expect, test } from 'bun:test';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 /**
@@ -10,12 +12,28 @@ import { join } from 'node:path';
 
 const entry = join(import.meta.dir, '..', 'src', 'index.ts');
 
+/** Somewhere throwaway for the CLI to keep its state, so no test writes into a real home. */
+const stateDir = await mkdtemp(join(tmpdir(), 'smartify-os-smoke-'));
+
+afterAll(async () => {
+	await rm(stateDir, { recursive: true, force: true });
+});
+
+/** What every run gets, on top of the caller's own environment. */
+const sealedEnv = {
+	// Force colors off so assertions match plain text.
+	NO_COLOR: '1',
+	// The update check must never run from a test. It would need the network, and it would
+	// write into whoever is running the tests.
+	SMARTIFY_OS_NO_UPDATE_CHECK: '1',
+	SMARTIFY_OS_STATE_DIR: stateDir,
+};
+
 async function runCli(args: string[]): Promise<{ code: number; stdout: string; stderr: string }> {
 	const proc = Bun.spawn([process.execPath, 'run', entry, ...args], {
 		stdout: 'pipe',
 		stderr: 'pipe',
-		// Force colors off so assertions match plain text.
-		env: { ...process.env, NO_COLOR: '1' },
+		env: { ...process.env, ...sealedEnv },
 	});
 
 	const [stdout, stderr, code] = await Promise.all([
@@ -34,13 +52,44 @@ describe('smartify-os', () => {
 		expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+ \(.+\)$/);
 	});
 
-	test('--help lists the usage and exits cleanly', async () => {
+	test('--version says nothing on stderr, so a script gets exactly one line', async () => {
+		const { stdout, stderr } = await runCli(['--version']);
+		expect(stdout.trim().split('\n')).toHaveLength(1);
+		expect(stderr).toBe('');
+	});
+
+	test('--help lists the usage and the commands, and exits cleanly', async () => {
 		const { code, stdout } = await runCli(['--help']);
 		expect(code).toBe(0);
 		expect(stdout).toContain('SmartifyOS');
 		expect(stdout).toContain('Usage');
 		expect(stdout).toContain('smartify-os <command> [options]');
 		expect(stdout).toContain('--version');
+		expect(stdout).toContain('update');
+		expect(stdout).toContain('help');
+		expect(stdout).not.toContain('None yet');
+	});
+
+	test('help lists every command with what it does', async () => {
+		const { code, stdout } = await runCli(['help']);
+		expect(code).toBe(0);
+		expect(stdout).toContain('Update SmartifyOS to the newest version');
+		expect(stdout).toContain('Show what SmartifyOS can do');
+	});
+
+	test('help <command> explains that one command', async () => {
+		const { code, stdout } = await runCli(['help', 'update']);
+		expect(code).toBe(0);
+		expect(stdout).toContain('smartify-os update');
+		expect(stdout).toContain('Usage');
+		expect(stdout).toContain('--check');
+		expect(stdout).toContain('--to');
+	});
+
+	test('help for a command that does not exist fails readably', async () => {
+		const { code, stdout, stderr } = await runCli(['help', 'nonsense']);
+		expect(code).toBe(1);
+		expect(stdout + stderr).toContain('There is no command called nonsense');
 	});
 
 	test('an unknown command fails with a readable message', async () => {
@@ -61,13 +110,24 @@ describe('smartify-os', () => {
 		expect(stdout).toContain('SmartifyOS');
 	});
 
+	// This is the guard that stops a run from the source tree trying to replace a binary
+	// that is not there. It fires before anything reaches the network, which is what makes
+	// it safe to test the real update command here at all.
+	test('update from the source tree refuses instead of doing something odd', async () => {
+		for (const args of [['update'], ['update', '--check'], ['upgrade']]) {
+			const { code, stdout, stderr } = await runCli(args);
+			expect(code).toBe(1);
+			expect(stdout + stderr).toContain('source code');
+		}
+	});
+
 	// `smartify-os --help | head` closes the pipe early. That has to be silent, not an
 	// EPIPE stack trace. It showed up first on Linux, where the pipe timing differs.
 	test('a reader that closes the pipe early is not an error', async () => {
 		const proc = Bun.spawn(['sh', '-c', `"${process.execPath}" run "${entry}" --help | head -2`], {
 			stdout: 'pipe',
 			stderr: 'pipe',
-			env: { ...process.env, NO_COLOR: '1' },
+			env: { ...process.env, ...sealedEnv },
 		});
 
 		const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);

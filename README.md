@@ -5,7 +5,7 @@ The command line tool for [SmartifyOS](https://smartify-os.com/), the open sourc
 It does the complicated parts for you. You should never have to touch `flutter`, `git` or `adb` to build a system for your car.
 
 > [!NOTE]
-> This is the very beginning. The tool installs, runs and builds, but the commands themselves are still on their way.
+> This is early days. The tool installs, runs, builds and keeps itself up to date. The commands for setting up and building a car system are still on their way.
 
 ## Install
 
@@ -39,6 +39,33 @@ Set these before running the installer if you want something other than the defa
 | `SMARTIFY_OS_INSTALL_DIR`    | Install somewhere other than `~/.smartify-os/bin`                       |
 | `SMARTIFY_OS_NO_MODIFY_PATH` | Leave your shell config alone                                           |
 | `SMARTIFY_OS_BASE_URL`       | Download from a mirror instead of GitHub                                |
+
+## Keeping it up to date
+
+```bash
+smartify-os update
+```
+
+That is all there is to it. It downloads the newest version, checks it against its published checksum, runs it to make sure it works on your machine, and only then replaces the one you have. If anything at all goes wrong along the way it says so and leaves your working copy exactly where it was.
+
+```bash
+smartify-os update --check      # only tell me whether there is a newer one
+smartify-os update --to 0.2.0   # install one particular version
+```
+
+You do not have to remember to check. Once a day, after whatever you were doing has finished, SmartifyOS quietly asks GitHub whether there is anything newer, and mentions it if there is:
+
+```
+  › A newer SmartifyOS CLI version is out: 0.1.1 › 0.2.0
+    Run smartify-os update to get it, it takes a few seconds.
+```
+
+The answer is remembered for 24 hours, so running ten commands in an afternoon is one check, not ten. The notice never appears in a script, in a pipe or in CI, and it goes to the error stream, so it can never end up in the middle of output you are using for something else.
+
+| Variable                      | What it does                             |
+| ----------------------------- | ---------------------------------------- |
+| `SMARTIFY_OS_NO_UPDATE_CHECK` | Never check, never mention it             |
+| `NO_UPDATE_NOTIFIER`          | The same, and respected by other tools too |
 
 ### Uninstall
 

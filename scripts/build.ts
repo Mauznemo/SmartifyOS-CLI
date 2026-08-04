@@ -46,7 +46,13 @@ async function buildTarget(target: Target, sha: string): Promise<string> {
 		entrypoints: [entry],
 		target: 'bun',
 		minify: true,
-		define: { __BUILD_SHA__: JSON.stringify(sha) },
+		define: {
+			__BUILD_SHA__: JSON.stringify(sha),
+			// Baked in so `update` never has to work out which build this is. Getting glibc
+			// and musl the wrong way round produces a binary that does not start at all,
+			// and the build is the one thing that knows the answer for certain.
+			__BUILD_TARGET__: JSON.stringify(target.replace('bun-', '')),
+		},
 		compile: {
 			target,
 			outfile,
