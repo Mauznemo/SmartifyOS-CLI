@@ -4,7 +4,7 @@ import {
 	isUpdatable,
 	planUpdate,
 	type UpdatePlan,
-} from '../core/update/install.ts';
+} from '../core/self-update/install.ts';
 import { intro, log, outro } from '../ui/output.ts';
 import { confirm, spinner } from '../ui/prompt.ts';
 import { theme } from '../ui/theme.ts';
@@ -22,16 +22,23 @@ const stepText: Record<InstallStep, string> = {
 	swap: 'Putting it in place',
 };
 
-export const updateCommand: Command = {
-	name: 'update',
-	aliases: ['upgrade'],
-	summary: 'Update SmartifyOS to the newest version',
+/**
+ * Updates the CLI itself.
+ *
+ * Named `self-update` rather than `update` on purpose. Nearly every command still to come
+ * acts on the car project, and the project will want updating too, so `update` has to stay
+ * free to mean that. Saying `self` here is the one word that makes it unambiguous.
+ */
+export const selfUpdateCommand: Command = {
+	name: 'self-update',
+	aliases: ['self-upgrade'],
+	summary: 'Update the SmartifyOS CLI itself to the newest version',
 	description:
-		'Downloads the newest SmartifyOS, checks it against its published checksum, runs it to make sure it works on this machine, and only then replaces the one you have.',
+		'Downloads the newest SmartifyOS CLI, checks it against its published checksum, runs it to make sure it works on this machine, and only then replaces the one you have. This updates the tool, not your car project.',
 	examples: [
-		`${binaryName} update`,
-		`${binaryName} update --check`,
-		`${binaryName} update --to 0.2.0`,
+		`${binaryName} self-update`,
+		`${binaryName} self-update --check`,
+		`${binaryName} self-update --to 0.2.0`,
 	],
 	flags: {
 		check: { type: 'boolean', describe: 'Only say whether there is a newer version' },
@@ -41,7 +48,7 @@ export const updateCommand: Command = {
 	async run({ flags }) {
 		if (!isUpdatable()) {
 			throw new CliError(
-				'This SmartifyOS runs from its source code, so there is nothing to replace.',
+				'This SmartifyOS CLI runs from its source code, so there is nothing to replace.',
 				{
 					hint: `Run ${theme.code('git pull')} in the CLI repo instead.`,
 				},
@@ -50,7 +57,7 @@ export const updateCommand: Command = {
 
 		const to = typeof flags.to === 'string' ? flags.to : undefined;
 
-		intro('Update');
+		intro('Self update');
 
 		const looking = spinner();
 		looking.start(to ? `Looking for ${to}` : 'Looking for the newest version');
@@ -74,7 +81,7 @@ export const updateCommand: Command = {
 			log.info(
 				`Version ${theme.strong(plan.targetVersion)} is available, you have ${plan.currentVersion}.`,
 			);
-			outro(`Run ${theme.code(`${binaryName} update`)} when you are ready.`);
+			outro(`Run ${theme.code(`${binaryName} self-update`)} when you are ready.`);
 			return;
 		}
 

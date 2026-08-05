@@ -1,6 +1,10 @@
 import { binaryName } from '../commands/flags.ts';
-import { isUpdatable } from '../core/update/install.ts';
-import { checkForUpdate, hostNotifierDeps, updateCheckDisabled } from '../core/update/notifier.ts';
+import { isUpdatable } from '../core/self-update/install.ts';
+import {
+	checkForUpdate,
+	hostNotifierDeps,
+	updateCheckDisabled,
+} from '../core/self-update/notifier.ts';
 import { canShowNotice, writeErrorLine } from './output.ts';
 import { symbols, theme } from './theme.ts';
 
@@ -19,7 +23,7 @@ export function renderUpdateNotice(latest: string, current: string): void {
 		`  ${theme.brand(symbols.arrow)} A newer SmartifyOS CLI version is out: ${theme.dim(current)} ${theme.dim(symbols.arrow)} ${theme.strong(theme.success(latest))}`,
 	);
 	writeErrorLine(
-		`    Run ${theme.code(`${binaryName} update`)} to get it, it takes a few seconds.`,
+		`    Run ${theme.code(`${binaryName} self-update`)} to get it, it takes a few seconds.`,
 	);
 	writeErrorLine();
 }

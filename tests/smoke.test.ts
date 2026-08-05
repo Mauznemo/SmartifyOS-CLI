@@ -65,7 +65,7 @@ describe('smartify-os', () => {
 		expect(stdout).toContain('Usage');
 		expect(stdout).toContain('smartify-os <command> [options]');
 		expect(stdout).toContain('--version');
-		expect(stdout).toContain('update');
+		expect(stdout).toContain('self-update');
 		expect(stdout).toContain('help');
 		expect(stdout).not.toContain('None yet');
 	});
@@ -73,14 +73,14 @@ describe('smartify-os', () => {
 	test('help lists every command with what it does', async () => {
 		const { code, stdout } = await runCli(['help']);
 		expect(code).toBe(0);
-		expect(stdout).toContain('Update SmartifyOS to the newest version');
+		expect(stdout).toContain('Update the SmartifyOS CLI itself to the newest version');
 		expect(stdout).toContain('Show what SmartifyOS can do');
 	});
 
 	test('help <command> explains that one command', async () => {
-		const { code, stdout } = await runCli(['help', 'update']);
+		const { code, stdout } = await runCli(['help', 'self-update']);
 		expect(code).toBe(0);
-		expect(stdout).toContain('smartify-os update');
+		expect(stdout).toContain('smartify-os self-update');
 		expect(stdout).toContain('Usage');
 		expect(stdout).toContain('--check');
 		expect(stdout).toContain('--to');
@@ -112,13 +112,22 @@ describe('smartify-os', () => {
 
 	// This is the guard that stops a run from the source tree trying to replace a binary
 	// that is not there. It fires before anything reaches the network, which is what makes
-	// it safe to test the real update command here at all.
-	test('update from the source tree refuses instead of doing something odd', async () => {
-		for (const args of [['update'], ['update', '--check'], ['upgrade']]) {
+	// it safe to test the real self-update command here at all.
+	test('self-update from the source tree refuses instead of doing something odd', async () => {
+		for (const args of [['self-update'], ['self-update', '--check'], ['self-upgrade']]) {
 			const { code, stdout, stderr } = await runCli(args);
 			expect(code).toBe(1);
 			expect(stdout + stderr).toContain('source code');
 		}
+	});
+
+	// `update` is being kept free for updating the car project, so it must not quietly do
+	// something else in the meantime, and it must not leave the user stuck either.
+	test('update is not a command yet, and says where to go instead', async () => {
+		const { code, stdout, stderr } = await runCli(['update']);
+		expect(code).toBe(1);
+		expect(stdout + stderr).toContain('There is no command called update');
+		expect(stdout + stderr).toContain('smartify-os self-update');
 	});
 
 	// `smartify-os --help | head` closes the pipe early. That has to be silent, not an

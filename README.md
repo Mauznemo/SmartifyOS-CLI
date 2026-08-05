@@ -43,21 +43,21 @@ Set these before running the installer if you want something other than the defa
 ## Keeping it up to date
 
 ```bash
-smartify-os update
+smartify-os self-update
 ```
 
 That is all there is to it. It downloads the newest version, checks it against its published checksum, runs it to make sure it works on your machine, and only then replaces the one you have. If anything at all goes wrong along the way it says so and leaves your working copy exactly where it was.
 
 ```bash
-smartify-os update --check      # only tell me whether there is a newer one
-smartify-os update --to 0.2.0   # install one particular version
+smartify-os self-update --check      # only tell me whether there is a newer one
+smartify-os self-update --to 0.2.0   # install one particular version
 ```
 
 You do not have to remember to check. Once a day, after whatever you were doing has finished, SmartifyOS quietly asks GitHub whether there is anything newer, and mentions it if there is:
 
 ```
   › A newer SmartifyOS CLI version is out: 0.1.1 › 0.2.0
-    Run smartify-os update to get it, it takes a few seconds.
+    Run smartify-os self-update to get it, it takes a few seconds.
 ```
 
 The answer is remembered for 24 hours, so running ten commands in an afternoon is one check, not ten. The notice never appears in a script, in a pipe or in CI, and it goes to the error stream, so it can never end up in the middle of output you are using for something else.

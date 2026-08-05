@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 import * as clack from '@clack/prompts';
 import { parse, run } from './cli.ts';
-import { sweepReplacedBinary } from './core/update/install.ts';
+import { sweepReplacedBinary } from './core/self-update/install.ts';
 import { renderError } from './ui/output.ts';
-import { maybeNotifyAboutUpdate } from './ui/update-notice.ts';
+import { maybeNotifyAboutUpdate } from './ui/self-update-notice.ts';
 import { CancelledError, CliError, ExitCode } from './utils/errors.ts';
 
 /**
@@ -51,7 +51,7 @@ async function afterCommand(argv: string[], code: number): Promise<void> {
 	try {
 		await sweepReplacedBinary();
 		if (code !== ExitCode.ok) return;
-		if (wasUpdateCommand(argv)) return;
+		if (wasSelfUpdateCommand(argv)) return;
 		await maybeNotifyAboutUpdate();
 	} catch {
 		// A check nobody asked for is never worth a message nobody asked for.
@@ -59,15 +59,16 @@ async function afterCommand(argv: string[], code: number): Promise<void> {
 }
 
 /**
- * Internal: telling somebody to run `update` at the end of `update` would be daft.
+ * Internal: telling somebody to run `self-update` at the end of `self-update` would be daft.
  *
  * `parse` has no side effects, so asking it a second time costs nothing and is a good deal
- * safer than trying to read the command name out of argv by hand.
+ * safer than trying to read the command name out of argv by hand. It also resolves aliases,
+ * so `self-upgrade` is caught here too.
  */
-function wasUpdateCommand(argv: string[]): boolean {
+function wasSelfUpdateCommand(argv: string[]): boolean {
 	try {
 		const result = parse(argv);
-		return result.kind === 'command' && result.command.name === 'update';
+		return result.kind === 'command' && result.command.name === 'self-update';
 	} catch {
 		return false;
 	}

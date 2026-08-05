@@ -92,7 +92,7 @@ describe('checkForUpdate', () => {
 		const { deps, told, fetchCount } = fakeDeps({
 			readState: async () => ({
 				version: stateVersion,
-				update: { lastCheckedAt: now - hour, latestVersion: '0.2.0' },
+				selfUpdate: { lastCheckedAt: now - hour, latestVersion: '0.2.0' },
 			}),
 		});
 
@@ -106,7 +106,7 @@ describe('checkForUpdate', () => {
 		const { deps, told, fetchCount } = fakeDeps({
 			readState: async () => ({
 				version: stateVersion,
-				update: { lastCheckedAt: now - 25 * hour },
+				selfUpdate: { lastCheckedAt: now - 25 * hour },
 			}),
 			fetchLatestVersion: async () => '0.3.0',
 		});
@@ -121,7 +121,7 @@ describe('checkForUpdate', () => {
 		const { deps, told } = fakeDeps({
 			readState: async () => ({
 				version: stateVersion,
-				update: { lastCheckedAt: now - 25 * hour, latestVersion: '0.2.0' },
+				selfUpdate: { lastCheckedAt: now - 25 * hour, latestVersion: '0.2.0' },
 			}),
 			fetchLatestVersion: async () => '0.2.0',
 		});
@@ -139,8 +139,8 @@ describe('checkForUpdate', () => {
 		await checkForUpdate(deps);
 
 		expect(written).toHaveLength(1);
-		expect(written[0]?.update?.lastCheckedAt).toBe(now);
-		expect(written[0]?.update?.latestVersion).toBeUndefined();
+		expect(written[0]?.selfUpdate?.lastCheckedAt).toBe(now);
+		expect(written[0]?.selfUpdate?.latestVersion).toBeUndefined();
 		expect(told).toEqual([]);
 	});
 
@@ -148,21 +148,21 @@ describe('checkForUpdate', () => {
 		const { deps, written } = fakeDeps({
 			readState: async () => ({
 				version: stateVersion,
-				update: { lastCheckedAt: now - 25 * hour, latestVersion: '0.2.0' },
+				selfUpdate: { lastCheckedAt: now - 25 * hour, latestVersion: '0.2.0' },
 			}),
 			fetchLatestVersion: async () => undefined,
 		});
 
 		await checkForUpdate(deps);
 
-		expect(written[0]?.update?.latestVersion).toBe('0.2.0');
+		expect(written[0]?.selfUpdate?.latestVersion).toBe('0.2.0');
 	});
 
 	test('says nothing at all when there is nothing newer', async () => {
 		const { deps, told } = fakeDeps({
 			readState: async () => ({
 				version: stateVersion,
-				update: { lastCheckedAt: now - hour, latestVersion: '0.1.1' },
+				selfUpdate: { lastCheckedAt: now - hour, latestVersion: '0.1.1' },
 			}),
 		});
 

@@ -1,6 +1,12 @@
 import { isNewer } from '../../utils/semver.ts';
 import { version } from '../../utils/version.ts';
-import { type CliState, readState, stateVersion, type UpdateState, writeState } from '../state.ts';
+import {
+	type CliState,
+	readState,
+	type SelfUpdateState,
+	stateVersion,
+	writeState,
+} from '../state.ts';
 import { resolveLatestVersion } from './release.ts';
 
 /**
@@ -36,7 +42,7 @@ export function updateCheckDisabled(env: Record<string, string | undefined>): bo
 
 /** Whether it is time to ask GitHub again. */
 export function shouldCheck(
-	state: UpdateState | undefined,
+	state: SelfUpdateState | undefined,
 	now: number,
 	intervalMs: number = checkIntervalMs,
 ): boolean {
@@ -80,16 +86,16 @@ export function hostNotifierDeps(notify: (latest: string, current: string) => vo
  */
 export async function checkForUpdate(deps: NotifierDeps): Promise<void> {
 	const state = await deps.readState();
-	const update = state.update ?? {};
+	const known = state.selfUpdate ?? {};
 	const now = deps.now();
 
 	let alreadySaid: string | undefined;
-	if (update.latestVersion && isNewer(update.latestVersion, deps.currentVersion)) {
-		deps.notify(update.latestVersion, deps.currentVersion);
-		alreadySaid = update.latestVersion;
+	if (known.latestVersion && isNewer(known.latestVersion, deps.currentVersion)) {
+		deps.notify(known.latestVersion, deps.currentVersion);
+		alreadySaid = known.latestVersion;
 	}
 
-	if (!shouldCheck(update, now)) return;
+	if (!shouldCheck(known, now)) return;
 
 	const latest = await deps.fetchLatestVersion();
 
@@ -102,8 +108,8 @@ export async function checkForUpdate(deps: NotifierDeps): Promise<void> {
 		await deps.writeState({
 			...state,
 			version: stateVersion,
-			update: {
-				...update,
+			selfUpdate: {
+				...known,
 				lastCheckedAt: now,
 				...(latest ? { latestVersion: latest } : {}),
 			},

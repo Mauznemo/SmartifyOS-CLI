@@ -16,7 +16,7 @@ export const helpCommand: Command = {
 	name: 'help',
 	summary: 'Show what SmartifyOS can do',
 	description: 'Lists everything SmartifyOS can do, or explains one command in detail.',
-	examples: [`${binaryName} help`, `${binaryName} help update`],
+	examples: [`${binaryName} help`, `${binaryName} help self-update`],
 	utility: true,
 	run({ positionals }) {
 		const name = positionals[0];

@@ -38,6 +38,12 @@ needs the help renderer while the help renderer needs the list of commands:
 - **Never print with `console.log`**, use `writeLine` or the `log` helpers from `src/ui/output.ts`. Biome fails the build on `console`.
 - **Failures throw `CliError`** from `src/utils/errors.ts` with a message saying what went wrong and a `hint` saying what to do about it. Commands return nothing on success, the exit code comes from the error.
 
+## Naming commands
+
+Nearly every command acts on the user's car project, so **the project is the default and never needs saying**. It is `build`, not `project build`, and one day it will be `update` for updating the project itself.
+
+Anything acting on the CLI instead is the exception and says so: `self-update`. That is why the command is not called `update`, and why `update` must stay unclaimed until it means the project.
+
 ## Writing style
 
 - Never use em dashes (—) or en dashes (–), anywhere: not in UI strings, docs, normal comments, or markdown. Use a comma, parentheses, or a separate sentence instead. This is checked by `tests/dashes.test.ts`, which scans the whole repo and fails on either character.
@@ -71,7 +77,7 @@ Three things about the compiled binary that were learned the hard way, all handl
 
 Bun's musl binaries link against `libstdc++`, which Alpine does not ship. `install.sh` names it if it is missing.
 
-`__BUILD_TARGET__` is injected the same way `__BUILD_SHA__` is, so `update` knows which of the eight builds to download without having to guess. Guessing gets glibc and musl the wrong way round, and that binary does not start at all. Anything else added to `define` needs a declaration in `globals.d.ts` and a `typeof x === 'string'` fallback for running from source.
+`__BUILD_TARGET__` is injected the same way `__BUILD_SHA__` is, so `self-update` knows which of the eight builds to download without having to guess. Guessing gets glibc and musl the wrong way round, and that binary does not start at all. Anything else added to `define` needs a declaration in `globals.d.ts` and a `typeof x === 'string'` fallback for running from source.
 
 Releases are cut by pushing a `v*` tag that matches the version in package.json. The release workflow runs lint, typecheck and tests first and stops if any of them fail, then builds every target, signs the macOS ones on a Mac, publishes them, and installs the result on Linux, macOS, Windows and Alpine to prove the install scripts still work.
 

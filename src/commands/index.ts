@@ -1,6 +1,6 @@
 import { helpCommand } from './help.ts';
 import { register } from './registry.ts';
-import { updateCommand } from './update.ts';
+import { selfUpdateCommand } from './self-update.ts';
 
 /**
  * Where every command is switched on.
@@ -12,6 +12,6 @@ import { updateCommand } from './update.ts';
  * Command files import ./registry.ts, never this file. This is the only place that knows
  * about all of them at once, which is what keeps the imports going one way.
  */
-register(updateCommand, helpCommand);
+register(selfUpdateCommand, helpCommand);
 
 export { commands, findCommand, visibleCommands } from './registry.ts';

@@ -14,8 +14,8 @@ import { statePath } from './paths.ts';
 /** Bumped when the shape changes, so an old file is thrown away rather than tripped over. */
 export const stateVersion = 1;
 
-/** What the update check remembers. */
-export interface UpdateState {
+/** What the check for a newer CLI remembers. */
+export interface SelfUpdateState {
 	/** Epoch milliseconds of the last time GitHub was asked. */
 	lastCheckedAt?: number;
 	/** The newest version GitHub reported, with no leading `v`. */
@@ -24,7 +24,8 @@ export interface UpdateState {
 
 export interface CliState {
 	version: number;
-	update?: UpdateState;
+	/** Named for the CLI's own version, so the car project can have its own key later. */
+	selfUpdate?: SelfUpdateState;
 }
 
 /** A state with nothing in it yet. */
@@ -52,17 +53,17 @@ export function parseState(text: string): CliState {
 	if (record.version !== stateVersion) return emptyState();
 
 	const state = emptyState();
-	const update = record.update;
-	if (typeof update === 'object' && update !== null && !Array.isArray(update)) {
-		const fields = update as Record<string, unknown>;
-		const kept: UpdateState = {};
+	const selfUpdate = record.selfUpdate;
+	if (typeof selfUpdate === 'object' && selfUpdate !== null && !Array.isArray(selfUpdate)) {
+		const fields = selfUpdate as Record<string, unknown>;
+		const kept: SelfUpdateState = {};
 		if (typeof fields.lastCheckedAt === 'number' && Number.isFinite(fields.lastCheckedAt)) {
 			kept.lastCheckedAt = fields.lastCheckedAt;
 		}
 		if (typeof fields.latestVersion === 'string') {
 			kept.latestVersion = fields.latestVersion;
 		}
-		state.update = kept;
+		state.selfUpdate = kept;
 	}
 
 	return state;

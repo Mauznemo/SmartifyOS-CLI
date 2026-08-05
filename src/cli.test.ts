@@ -126,33 +126,42 @@ describe('the commands that ship', () => {
 		expect(result.positionals).toEqual([]);
 	});
 
-	test('the command to explain is a positional, so `help update` works', () => {
-		const result = parse(['help', 'update']);
+	test('the command to explain is a positional, so `help self-update` works', () => {
+		const result = parse(['help', 'self-update']);
 		expect(result.kind).toBe('command');
 		if (result.kind !== 'command') return;
 		expect(result.command.name).toBe('help');
-		expect(result.positionals).toEqual(['update']);
+		expect(result.positionals).toEqual(['self-update']);
 	});
 
-	test('upgrade is the same command as update', () => {
-		const result = parse(['upgrade']);
+	test('self-upgrade is the same command as self-update', () => {
+		const result = parse(['self-upgrade']);
 		expect(result.kind).toBe('command');
 		if (result.kind !== 'command') return;
-		expect(result.command.name).toBe('update');
+		expect(result.command.name).toBe('self-update');
 	});
 
-	test('update takes --check and --to', () => {
-		const result = parse(['update', '--check', '--to', '0.2.0']);
+	test('self-update takes --check and --to', () => {
+		const result = parse(['self-update', '--check', '--to', '0.2.0']);
 		expect(result.kind).toBe('command');
 		if (result.kind !== 'command') return;
 		expect(result.flags.check).toBe(true);
 		expect(result.flags.to).toBe('0.2.0');
 	});
 
-	test('--help after update explains it rather than running it', () => {
-		const result = parse(['update', '--help']);
+	test('--help after self-update explains it rather than running it', () => {
+		const result = parse(['self-update', '--help']);
 		expect(result.kind).toBe('help');
 		if (result.kind !== 'help') return;
-		expect(result.command?.name).toBe('update');
+		expect(result.command?.name).toBe('self-update');
+	});
+
+	// `update` is deliberately not taken, so it stays free for updating the car project.
+	// Somebody who types it should still be pointed at the right thing.
+	test('update is not a command, but it does suggest self-update', () => {
+		const result = parse(['update']);
+		expect(result.kind).toBe('unknown');
+		if (result.kind !== 'unknown') return;
+		expect(result.suggestion).toBe('self-update');
 	});
 });
